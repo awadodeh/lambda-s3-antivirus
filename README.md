@@ -98,12 +98,6 @@ Dependencies needed:
 - aws-sdk-core - required to use aws-sdk
 - aws-sdk-lambda - required to invoke the lambda
 ```java
-
-
-# Build Invoke Payload and JSONify
-req_payload = {:s3Bucket => bucket, :s3Key => key}
-payload = JSON.generate(req_payload)
-
 # Invoke Lambda as Event (Fire and Forget)
 
 # Configure AWS and create Lambda Client
@@ -238,7 +232,9 @@ public interface FileScanService {
    @LambdaFunction( functionName = "s3-antivirus-api-scan" )
    public FileScanOutput scanFile( FileScanInput fileScanInput );
 }
+
 # Actual scan method
+
    @Async
    public String scanFile( String s3Bucket, String s3Key ) {
       final FileScanService fileScanService = LambdaInvokerFactory.builder()
