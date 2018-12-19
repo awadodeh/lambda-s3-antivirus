@@ -1,6 +1,6 @@
-# Truework S3 Antivirus
+# Vanderbilt S3 Antivirus
 
-Link to the Truework blog post for more details
+Credit goes to Truework, refere to thier blog post for more details
 
 https://blog.truework.com/2018-07-09-s3-antivirus-lambda-function/
 
@@ -92,10 +92,172 @@ resp = lambda_client.invoke({function_name: {lambdaName},
         })
 ```
 
+_*Java*_
+
+Dependencies needed:
+- aws-sdk-core - required to use aws-sdk
+- aws-sdk-lambda - required to invoke the lambda
+```java
+
+
+# Build Invoke Payload and JSONify
+req_payload = {:s3Bucket => bucket, :s3Key => key}
+payload = JSON.generate(req_payload)
+
+# Invoke Lambda as Event (Fire and Forget)
+
+# Configure AWS and create Lambda Client
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+
+@Configuration
+public class S3Config {
+
+   @Value( "${aws.access.key.id}" )
+   private String awsId;
+
+   @Value( "${aws.s3.secret.access.key}" )
+   private String awsKey;
+
+   @Value( "${aws.s3.bucket.name}" )
+   private String awsBucketName;
+
+   @Autowired
+   private BasicAWSCredentials awsCredentials;
+
+   public AmazonS3 getS3client() {
+      AmazonS3 s3Client = AmazonS3ClientBuilder.standard()
+                                               .withRegion( Regions.fromName( awsBucketName ) )
+                                               .withCredentials( new AWSStaticCredentialsProvider( awsCredentials ) )
+                                               .build();
+      return s3Client;
+   }
+
+   public String getAwsId() {
+      return awsId;
+   }
+
+   public void setAwsId( String awsId ) {
+      this.awsId = awsId;
+   }
+
+   public String getAwsKey() {
+      return awsKey;
+   }
+
+   public void setAwsKey( String awsKey ) {
+      this.awsKey = awsKey;
+   }
+
+   public String getAwsBucketName() {
+      return awsBucketName;
+   }
+
+   public void setAwsBucketName( String awsBucketName ) {
+      this.awsBucketName = awsBucketName;
+   }
+
+   public BasicAWSCredentials getAwsCredentials() {
+      return awsCredentials;
+   }
+
+   public void setAwsCredentials( BasicAWSCredentials awsCredentials ) {
+      this.awsCredentials = awsCredentials;
+   }
+}
+
+# Build response and request objects
+/**
+ * This class is to define POJO representing the input
+ * required to invoke s3-antivirus-api-scan lambda function.
+ *
+ * @Auther: owdaa
+ */
+public class FileScanInput {
+
+   private String s3Bucket;
+   private String s3Key;
+
+   public String getS3Bucket() {
+      return s3Bucket;
+   }
+
+   public void setS3Bucket( String value ) {
+      s3Bucket = value;
+   }
+
+   public String getS3Key() {
+      return s3Key;
+   }
+
+   public void setS3Key( String value ) {
+      s3Key = value;
+   }
+}
+
+/**
+ * This class is to define POJO representing output JSON
+ * required to invoke s3-antivirus-api-scan lambda function.
+ *
+ * @Auther: owdaa
+ */
+public class FileScanOutput {
+
+   private String status;
+
+   public FileScanOutput() {
+   }
+
+   public FileScanOutput( String status ) {
+      this.status = status;
+   }
+
+   public String getStatus() {
+      return status;
+   }
+
+   public void setStatus( String value ) {
+      status = value;
+   }
+}
+
+# Build service method that will call the handler
+import com.amazonaws.services.lambda.invoke.LambdaFunction;
+import edu.vanderbilt.mis.service.studentdocument.model.s3.FileScanInput;
+import edu.vanderbilt.mis.service.studentdocument.model.s3.FileScanOutput;
+
+public interface FileScanService {
+
+   @LambdaFunction( functionName = "s3-antivirus-api-scan" )
+   public FileScanOutput scanFile( FileScanInput fileScanInput );
+}
+# Actual scan method
+   @Async
+   public String scanFile( String s3Bucket, String s3Key ) {
+      final FileScanService fileScanService = LambdaInvokerFactory.builder()
+                                                                  .lambdaClient( AWSLambdaClientBuilder.defaultClient() )
+                                                                  .build( FileScanService.class );
+
+      FileScanInput input = new FileScanInput();
+      input.setS3Bucket( s3Bucket );
+      input.setS3Key( s3Key );
+
+      return fileScanService.scanFile( input ).getStatus();
+   }
+```
+
 
 ## Contributors
 
 - [Jamie Lediet](https://github.com/jlediet)
+- [Awad Owda](https://github.com/awadodeh)
 
 #### License & Acknowledgements
 
